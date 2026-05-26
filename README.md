@@ -143,3 +143,62 @@ logging
     - Very important at scale.
     - Easily utilizes from Observability tools like OpenTelemetry
 
+
+## Quick Start (local)
+
+- Create and activate a virtualenv:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+- Install dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+- Run the app:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+## Tests
+
+- Run tests locally:
+
+```bash
+pytest -q
+```
+
+- Run tests inside the container (image built by docker-compose):
+
+```bash
+docker compose -f docker-compose.yml up --build
+docker exec -w /app image-service pytest -q
+```
+
+## Docker
+
+- Notes:
+  - The Docker build context is set to the project root in `docker-compose.yml`.
+  - The `deployment/docker/Dockerfile` base image was changed to `python:3.14-slim` to match development dependency wheels.
+  - The final stage installs `requirements.txt` so CLI entrypoints like `uvicorn` are available.
+
+- To build and run with compose:
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+## Environment
+
+- Configure the following environment variables (see `.env` for defaults):
+  - `AWS_REGION`
+  - `S3_BUCKET_NAME`
+  - `DYNAMODB_TABLE_NAME`
+
+## Serverless lambda details
+

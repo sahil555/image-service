@@ -1,0 +1,74 @@
+service: image-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ${env:AWS_REGION, 'ap-south-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  environment:
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'image-service-bucket'}
+    DYNAMODB_TABLE_NAME: ${env:DYNAMODB_TABLE_NAME, 'image-service-table'}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*
+
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_NAME}
+
+functions:
+  api:
+    handler: app/lambda_handler.handler
+    events:
+      - httpApi:
+          path: /
+          method: ANY
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+
+package:
+  exclude:
+    - tests/**
+    - .venv/**
+    - deployment/**
+    - .git/**
+
+plugins:
+  - serverless-python-requirements
+
+resources:
+  Resources:
+    ImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
+
+    ImagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: image_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: image_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST

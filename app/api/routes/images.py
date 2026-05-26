@@ -1,6 +1,15 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.services.image_service import ImageService
+from app.core.exception import (
+    DatabaseException,
+    ImageDeletionException,
+    ImageNotFoundException,
+    ImageUploadException,
+    InvalidImageFormatException,
+    StorageServiceException,
+    ValidationException,
+)
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -13,46 +22,61 @@ async def upload_image(
     description: str = Form(None),
     tags: str = Form(None)
 ):
-
     metadata = {
         "user_id": user_id,
         "title": title,
         "description": description,
         "tags": tags.split(",") if tags else []
     }
-    return await ImageService.upload_image(file, metadata)
+
+    try:
+        return await ImageService.upload_image(file, metadata)
+    except (InvalidImageFormatException, ValidationException) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except (ImageUploadException, StorageServiceException, DatabaseException) as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unexpected error during image upload.") from exc
 
 
 @router.get("")
 def list_images(
-    user_id: str = None,
-    tag: str = None
+    user_id: str = "",
+    tag: str = ""
 ):
-
-    return ImageService.list_images({
-        "user_id": user_id,
-        "tag": tag
-    })
+    try:
+        return ImageService.list_images({
+            "user_id": user_id,
+            "tag": tag
+        })
+    except ValidationException as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except DatabaseException as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unexpected error during image listing.") from exc
 
 
 @router.get("/{image_id}")
 def get_image(image_id: str):
+    try:
+        return ImageService.get_image(image_id)
+    except ImageNotFoundException as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except StorageServiceException as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unexpected error while fetching image.") from exc
 
-    item = ImageService.get_image(image_id)
-
-    if not item:
-        raise HTTPException(404, "Image not found")
-
-    return item
 
 @router.delete("/{image_id}")
 def delete_image(image_id: str):
-
-    deleted = ImageService.delete_image(image_id)
-
-    if not deleted:
-        raise HTTPException(404, "Image not found")
-
-    return {
-        "message": "Image deleted successfully"
-    }
+    try:
+        ImageService.delete_image(image_id)
+        return {"message": "Image deleted successfully"}
+    except ImageNotFoundException as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ImageDeletionException as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unexpected error while deleting image.") from exc

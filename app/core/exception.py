@@ -2,7 +2,7 @@
 Custom exceptions for the image service.
 """
 # defining custom exceptions allows us to provide more specific error messages and handle different error scenarios gracefully in our application.
-from email.mime import message
+
 import logging
 
 logging.basicConfig(level=logging.ERROR)
@@ -22,9 +22,6 @@ class ImageUploadException(Exception):
     def __init__(self, message: str):
         logging.error("Error occurred while uploading image.")
         super().__init__(message)
-
-    
-    
 
 class ImageDeletionException(Exception):
     """Raised when there is an error during image deletion."""

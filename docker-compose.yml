@@ -1,0 +1,13 @@
+
+services:
+    image-service:
+        build:
+            context: .
+            dockerfile: deployment/docker/Dockerfile
+        ports:
+        - "8000:8000"
+        environment:
+            - AWS_REGION=ap-south-1
+            - S3_BUCKET_NAME=image-service-bucket
+            - DYNAMODB_TABLE_NAME=image-service-table
+
