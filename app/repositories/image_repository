@@ -1,0 +1,42 @@
+from app.db.ddb import image_table
+
+
+class ImageRepository:
+
+    @staticmethod
+    def create_image(metadata: dict):
+        image_table.put_item(Item=metadata)
+
+    @staticmethod
+    def get_image(image_id: str):
+        response = image_table.get_item(
+            Key={"image_id": image_id}
+        )
+
+        return response.get("Item")
+
+    @staticmethod
+    def delete_image(image_id: str):
+        image_table.delete_item(
+            Key={"image_id": image_id}
+        )
+
+    @staticmethod
+    def list_images(filters: dict):
+        response = image_table.scan()
+
+        items = response.get("Items", [])
+
+        if filters.get("user_id"):
+            items = [
+                i for i in items
+                if i["user_id"] == filters["user_id"]
+            ]
+
+        if filters.get("tag"):
+            items = [
+                i for i in items
+                if filters["tag"] in i.get("tags", [])
+            ]
+
+        return items
