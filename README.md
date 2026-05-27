@@ -202,3 +202,45 @@ docker compose -f docker-compose.yml up -d --build
 
 ## Serverless lambda details
 
+Run serverless to interactively setup a project.
+
+See metrics, traces, logs, errors, deployments and more in Serverless Framework Dashboard.
+  Learn more: https://app.serverless.com
+
+## available commands use for utility
+
+
+# Options
+  --help / -h                     Show this message
+  --version / -v                  Show version info
+  --verbose                       Show verbose logs
+  --debug                         Namespace of debug logs to expose (use "*" to display all)
+  --config / -c                   Path to serverless config file
+  --stage / -s                    Stage of the service
+  --param                         Pass custom parameter values for "param" variable source (usage: --param="key=value")
+  --region / -r                   Region of the service
+  --aws-profile                   AWS profile to use with the command
+  --org                           Dashboard org name
+  --app                           Dashboard app name
+
+# Main commands
+  deploy                          Deploy a Serverless service
+  deploy function                 Deploy a single function from the service
+  info                            Display information about the service
+  dev                             Start dev mode in this service
+  invoke                          Invoke a deployed function or agent
+  logs                            Output the logs of a deployed function or agent
+
+# Other commands
+  print                           Print your compiled and resolved config file
+  help                            Display Help
+  package                         Packages a Serverless Service
+  deploy list                     List deployed version of your Serverless Service
+  deploy list functions           List all the deployed functions and their versions
+  invoke local                    Invoke function locally
+  metrics                         Show metrics for a specific function
+  remove                          Remove Serverless service and all resources
+  rollback                        Rollback the Serverless service to a specific deployment
+  rollback function               Rollback the function to the previous version
+  prune                           Clean up deployed functions and/or layers by deleting older versions
+

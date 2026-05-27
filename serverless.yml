@@ -1,6 +1,6 @@
 service: image-service
 
-frameworkVersion: '3'
+frameworkVersion: '4'
 
 provider:
   name: aws
@@ -51,8 +51,12 @@ package:
     - deployment/**
     - .git/**
 
-plugins:
-  - serverless-python-requirements
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    zip: true
+    invalidateCaches: true
 
 resources:
   Resources:
