@@ -244,3 +244,17 @@ See metrics, traces, logs, errors, deployments and more in Serverless Framework 
   rollback function               Rollback the function to the previous version
   prune                           Clean up deployed functions and/or layers by deleting older versions
 
+
+## Custom Bash script for test
+
+# Development with uvicorn (auto-reload)
+./run.sh uvicorn
+
+# Local Lambda emulation
+./run.sh serverless-local
+
+# Docker container
+./run.sh docker
+
+# Deploy to AWS Lambda
+./run.sh serverless-deploy --stage dev
