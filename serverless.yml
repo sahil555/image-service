@@ -76,3 +76,7 @@ resources:
           - AttributeName: image_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+
+plugins:
+  - serverless-offline
+  - serverless-python-requirements
