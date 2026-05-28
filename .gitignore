@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# node for serverless
+node_modules/*
+
 # Virtual Environments
 venv/
 .venv/
