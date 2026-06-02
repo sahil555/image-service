@@ -58,6 +58,28 @@ class StorageService:
 
     @Helpers().timer_method
     @staticmethod
+    def generate_presigned_upload_url():
+        """Generate a presigned PUT URL and return (image_id, key, upload_url)."""
+        image_id = str(uuid4())
+        key = f"images/{image_id}"
+        try:
+            s3_client = get_s3_client()
+            upload_url = s3_client.generate_presigned_url(
+                ClientMethod='put_object',
+                Params={
+                    'Bucket': settings.S3_BUCKET_NAME,
+                    'Key': key,
+                },
+                ExpiresIn=3600,
+            )
+            return image_id, key, upload_url
+        except ClientError as exc:
+            raise StorageServiceException(f"Failed to generate presigned upload URL: {exc}") from exc
+        except Exception as exc:
+            raise StorageServiceException("Unexpected storage error while generating presigned upload URL.") from exc
+
+    @Helpers().timer_method
+    @staticmethod
     def delete_image(key: str):
         try:
             s3_client = get_s3_client()

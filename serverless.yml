@@ -8,7 +8,7 @@ provider:
   region: ${env:AWS_REGION, 'ap-south-1'}
   stage: ${opt:stage, 'dev'}
   memorySize: 512
-  timeout: 30
+  timeout: 900
   environment:
     S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'image-service-bucket'}
     DYNAMODB_TABLE_NAME: ${env:DYNAMODB_TABLE_NAME, 'image-service-table'}
@@ -58,25 +58,5 @@ custom:
     zip: true
     invalidateCaches: true
 
-resources:
-  Resources:
-    ImagesBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
-
-    ImagesTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TABLE_NAME}
-        AttributeDefinitions:
-          - AttributeName: image_id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: image_id
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-
 plugins:
   - serverless-offline
-  - serverless-python-requirements

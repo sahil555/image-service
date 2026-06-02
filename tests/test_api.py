@@ -144,3 +144,63 @@ async def test_list_images_empty_filters(aws_resources):
         response = await client.get("/images")
         assert response.status_code == 200
         assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_get_upload_url_returns_presigned_url(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get("/images/get_upload_url")
+        assert response.status_code == 200
+
+        payload = response.json()
+        assert "image_id" in payload
+        assert "key" in payload
+        assert "upload_url" in payload
+
+        # Validate format
+        assert payload["image_id"]  # UUID should not be empty
+        assert payload["key"].startswith("images/")  # Key should follow the pattern
+        assert payload["upload_url"].startswith("https://")  # Presigned URL should be HTTPS
+        assert "s3" in payload["upload_url"].lower()  # Should contain S3 reference
+
+
+@pytest.mark.asyncio
+async def test_get_upload_url_returns_valid_image_id_key_pair(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get("/images/get_upload_url")
+        assert response.status_code == 200
+
+        payload = response.json()
+        # The key should contain the image_id
+        assert payload["image_id"] in payload["key"]
+        assert payload["key"] == f"images/{payload['image_id']}"
+
+
+@pytest.mark.asyncio
+async def test_get_upload_url_multiple_calls_generate_unique_ids(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response_one = await client.get("/images/get_upload_url")
+        assert response_one.status_code == 200
+        payload_one = response_one.json()
+
+        response_two = await client.get("/images/get_upload_url")
+        assert response_two.status_code == 200
+        payload_two = response_two.json()
+
+        # Each call should generate a unique image_id and upload_url
+        assert payload_one["image_id"] != payload_two["image_id"]
+        assert payload_one["upload_url"] != payload_two["upload_url"]
+
+
+@pytest.mark.asyncio
+async def test_get_upload_url_presigned_url_has_expiration(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get("/images/get_upload_url")
+        assert response.status_code == 200
+
+        payload = response.json()
+        upload_url = payload["upload_url"]
+        
+        # Presigned URLs should contain X-Amz-Expires parameter (3600 seconds)
+        assert "X-Amz-Expires" in upload_url
+        assert "3600" in upload_url

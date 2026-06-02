@@ -55,15 +55,15 @@ case "$COMMAND" in
     serverless-local)
         echo -e "${GREEN}Starting app with serverless-offline...${NC}"
         echo -e "${YELLOW}Note: Ensure serverless and serverless-offline are installed:${NC}"
-        echo "  npm install -g serverless serverless-offline serverless-python-requirements"
+        echo "  installing serverless plugins may take a few minutes on first run"
         echo ""
         
         if ! command -v serverless &> /dev/null; then
             echo -e "${RED}❌ serverless CLI not found. Installing...${NC}"
-            npm install -g serverless serverless-offline serverless-python-requirements
+            npm install -g serverless serverless-offline
         fi
         
-        npm install --save-dev serverless-offline serverless-python-requirements 2>/dev/null || true
+        npm install --save-dev serverless-offline 2>/dev/null || true
         
         export AWS_REGION="$AWS_REGION"
         export S3_BUCKET_NAME="$S3_BUCKET_NAME"
@@ -89,10 +89,10 @@ case "$COMMAND" in
         
         if ! command -v serverless &> /dev/null; then
             echo -e "${RED}❌ serverless CLI not found. Installing...${NC}"
-            npm install -g serverless serverless-python-requirements
+            npm install -g serverless serverless-offline
         fi
         
-        npm install --save-dev serverless-python-requirements 2>/dev/null || true
+        npm install --save-dev serverless-offline 2>/dev/null || true
         
         export AWS_REGION="$AWS_REGION"
         export S3_BUCKET_NAME="$S3_BUCKET_NAME"

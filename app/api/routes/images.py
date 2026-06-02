@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.services.image_service import ImageService
+from app.services.storage_service import StorageService
 from app.core.exception import (
     DatabaseException,
     ImageDeletionException,
@@ -12,6 +13,17 @@ from app.core.exception import (
 )
 
 router = APIRouter(prefix="/images", tags=["images"])
+
+
+@router.get("/get_upload_url")
+def get_upload_url(user_id: str = ""):
+    try:
+        image_id, key, upload_url = StorageService.generate_presigned_upload_url()
+        return {"image_id": image_id, "key": key, "upload_url": upload_url}
+    except StorageServiceException as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unexpected error while generating upload URL.") from exc
 
 
 @router.post("")

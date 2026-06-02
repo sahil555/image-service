@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = "image-service-bucket"
     DYNAMODB_TABLE_NAME: str = "image-service-table"
 
-    model_config = ConfigDict(env_file=".env")
+    model_config = ConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
