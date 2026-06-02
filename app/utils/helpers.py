@@ -1,8 +1,9 @@
 """Helper functions for the image service."""
 from datetime import datetime
 import time
-import logging
 import inspect
+
+from app.core.logging import logger
 
 class Helpers:
 
@@ -14,7 +15,11 @@ class Helpers:
                 start_time = time.time()
                 result = await func(*args, **kwargs)
                 end_time = time.time()
-                logging.info(f"{func.__name__} executed in {end_time - start_time:.4f} seconds")
+                logger.info(
+                    "%s executed",
+                    func.__name__,
+                    extra={"elapsed_seconds": f"{end_time - start_time:.4f}"},
+                )
                 return result
 
             return async_wrapper
@@ -23,7 +28,11 @@ class Helpers:
             start_time = time.time()
             result = func(*args, **kwargs)
             end_time = time.time()
-            logging.info(f"{func.__name__} executed in {end_time - start_time:.4f} seconds")
+            logger.info(
+                "%s executed",
+                func.__name__,
+                extra={"elapsed_seconds": f"{end_time - start_time:.4f}"},
+            )
             return result
 
         return wrapper

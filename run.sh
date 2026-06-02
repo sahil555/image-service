@@ -48,7 +48,7 @@ shift || true
 case "$COMMAND" in
     uvicorn)
         echo -e "${GREEN}Starting app with uvicorn on port $PORT...${NC}"
-        source .venv/bin/activate 2>/dev/null || true
+        source .venv/bin/activate
         uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --reload
         ;;
 
