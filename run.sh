@@ -10,9 +10,11 @@ NC='\033[0m' # No Color
 
 # Default environment
 AWS_REGION="${AWS_REGION:-ap-south-1}"
-S3_BUCKET_NAME="${S3_BUCKET_NAME:-image-service-bucket}"
-DYNAMODB_TABLE_NAME="${DYNAMODB_TABLE_NAME:-image-service-table}"
+S3_BUCKET_NAME="${S3_BUCKET_NAME:-image-service-bucket-ap-south-1}"
+DYNAMODB_TABLE_NAME="${DYNAMODB_TABLE_NAME:-image-service-table-ap-south-1}"
 PORT="${PORT:-8000}"
+AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-AWS_ACCESS_KEY_ID}"
+AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-AWS_SECRET_ACCESS_KEY}"
 
 # Usage
 usage() {
@@ -46,6 +48,7 @@ COMMAND=${1:-help}
 shift || true
 
 case "$COMMAND" in
+
     uvicorn)
         echo -e "${GREEN}Starting app with uvicorn on port $PORT...${NC}"
         source .venv/bin/activate
@@ -65,14 +68,13 @@ case "$COMMAND" in
         
         npm install --save-dev serverless-offline 2>/dev/null || true
         
-        export AWS_REGION="$AWS_REGION"
-        export S3_BUCKET_NAME="$S3_BUCKET_NAME"
-        export DYNAMODB_TABLE_NAME="$DYNAMODB_TABLE_NAME"
-        
         serverless offline start --stage dev
         ;;
 
     docker)
+        echo -e "${GREEN}Setting ENV for Docker image...${NC}"
+        python3 deployment/docker/docker_script_cred_set.py
+        echo -e "${AWS_ACCESS_KEY_ID} and ${AWS_SECRET_ACCESS_KEY} set for Docker build."
         echo -e "${GREEN}Starting app with Docker Compose...${NC}"
         docker compose -f docker-compose.yml up -d --build
         echo -e "${GREEN}✓ Container started. Access at http://localhost:8000${NC}"
@@ -93,10 +95,6 @@ case "$COMMAND" in
         fi
         
         npm install --save-dev serverless-offline 2>/dev/null || true
-        
-        export AWS_REGION="$AWS_REGION"
-        export S3_BUCKET_NAME="$S3_BUCKET_NAME"
-        export DYNAMODB_TABLE_NAME="$DYNAMODB_TABLE_NAME"
         
         STAGE="${1:-dev}"
         echo -e "${YELLOW}Deploying to stage: $STAGE${NC}"

@@ -1,8 +1,9 @@
 import boto3
+from typing import Any
 from app.core.config import settings
 
 
-def get_dynamodb_resource():
+def get_dynamodb_resource() -> Any:
     return boto3.resource(
         "dynamodb",
         region_name=settings.AWS_REGION
