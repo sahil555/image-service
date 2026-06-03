@@ -10,8 +10,9 @@ provider:
   memorySize: 512
   timeout: 900
   environment:
-    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'image-service-bucket'}
-    DYNAMODB_TABLE_NAME: ${env:DYNAMODB_TABLE_NAME, 'image-service-table'}
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'image-service-bucket-ap-south-1'}
+    DYNAMODB_TABLE_NAME: ${env:DYNAMODB_TABLE_NAME, 'image-service-table-ap-south-1'}
+    AWS_REGION: ${env:AWS_REGION, 'ap-south-1'}
 
   iam:
     role:

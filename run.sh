@@ -56,6 +56,9 @@ case "$COMMAND" in
         ;;
 
     serverless-local)
+        echo -e "${GREEN}Setting ENV for serverless local...${NC}"
+        python3 deployment/docker/docker_script_cred_set.py
+        echo -e "${AWS_ACCESS_KEY_ID} and ${AWS_SECRET_ACCESS_KEY} set for build."
         echo -e "${GREEN}Starting app with serverless-offline...${NC}"
         echo -e "${YELLOW}Note: Ensure serverless and serverless-offline are installed:${NC}"
         echo "  installing serverless plugins may take a few minutes on first run"
@@ -68,7 +71,8 @@ case "$COMMAND" in
         
         npm install --save-dev serverless-offline 2>/dev/null || true
         
-        serverless offline start --stage dev
+        serverless offline start --stage dev --port 5000
+        echo -e "${GREEN}✓ Serverless offline started. Access at http://localhost:5000${NC}"
         ;;
 
     docker)
