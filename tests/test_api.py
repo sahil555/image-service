@@ -1,6 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from app.main import app
+from app.repositories.image_repository import ImageRepository
 
 
 @pytest.mark.asyncio
@@ -204,3 +205,66 @@ async def test_get_upload_url_presigned_url_has_expiration(aws_resources):
         # Presigned URLs should contain X-Amz-Expires parameter (3600 seconds)
         assert "X-Amz-Expires" in upload_url
         assert "3600" in upload_url
+
+
+@pytest.mark.asyncio
+async def test_get_upload_url_creates_pending_metadata(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        response = await client.get(
+            "/images/get_upload_url",
+            params={
+                "user_id": "pending-user",
+                "title": "Pending Image",
+                "description": "Metadata should be stored",
+                "tags": "pending,upload",
+                "content_type": "image/png"
+            }
+        )
+        assert response.status_code == 200
+
+        payload = response.json()
+        image_id = payload["image_id"]
+        item = ImageRepository.get_image(image_id)
+
+        assert item is not None
+        assert item["image_id"] == image_id
+        assert item["status"] == "PENDING"
+        assert item["user_id"] == "pending-user"
+        assert item["title"] == "Pending Image"
+        assert item["description"] == "Metadata should be stored"
+        assert item["tags"] == ["pending", "upload"]
+        assert item["content_type"] == "image/png"
+        assert item["s3_key"] == payload["key"]
+
+
+def test_s3_event_handler_updates_pending_upload(aws_resources):
+    from app.core.config import settings
+    from app.s3_event_handler import handler as s3_event_handler
+
+    image_id = "pending-event-id"
+    ImageRepository.create_image({
+        "image_id": image_id,
+        "s3_key": f"images/{image_id}",
+        "status": "PENDING"
+    })
+
+    event = {
+        "Records": [
+            {
+                "eventName": "ObjectCreated:Put",
+                "s3": {
+                    "bucket": {"name": settings.S3_BUCKET_NAME},
+                    "object": {"key": f"images/{image_id}"},
+                },
+            }
+        ]
+    }
+
+    result = s3_event_handler(event, None)
+    assert result["status"] == "processed"
+    assert result["records"] == 1
+
+    item = ImageRepository.get_image(image_id)
+    assert item is not None
+    assert item["status"] == "UPLOADED"
+    assert item["uploaded_at"]

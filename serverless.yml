@@ -10,9 +10,11 @@ provider:
   memorySize: 512
   timeout: 900
   environment:
+    SERVICE_NAME: ${env:SERVICE_NAME, 'image-service'}
     S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'image-service-bucket-ap-south-1'}
     DYNAMODB_TABLE_NAME: ${env:DYNAMODB_TABLE_NAME, 'image-service-table-ap-south-1'}
     AWS_REGION: ${env:AWS_REGION, 'ap-south-1'}
+    OTEL_EXPORTER_OTLP_ENDPOINT: ${env:OTEL_EXPORTER_OTLP_ENDPOINT, ''}
 
   iam:
     role:
@@ -30,6 +32,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:GetItem
             - dynamodb:DeleteItem
+            - dynamodb:UpdateItem
             - dynamodb:Scan
           Resource:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_NAME}
@@ -44,6 +47,14 @@ functions:
       - httpApi:
           path: /{proxy+}
           method: ANY
+
+  s3UploadHandler:
+    handler: app.s3_event_handler.handler
+    events:
+      - s3:
+          bucket: ${self:provider.environment.S3_BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          existing: true
 
 package:
   exclude:

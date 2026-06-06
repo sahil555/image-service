@@ -18,6 +18,25 @@ class ImageRepository:
             raise DatabaseException("Unable to save image metadata.") from exc
 
     @staticmethod
+    def update_image(image_id: str, updates: dict):
+        logger.info("repository.update_image.start", extra={"image_id": image_id, "updates": updates})
+        try:
+            image_table = get_image_table()
+            update_expression = "SET " + ", ".join(f"#{k} = :{k}" for k in updates.keys())
+            expression_attribute_names = {f"#{k}": k for k in updates.keys()}
+            expression_attribute_values = {f":{k}": v for k, v in updates.items()}
+            image_table.update_item(
+                Key={"image_id": image_id},
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=expression_attribute_names,
+                ExpressionAttributeValues=expression_attribute_values,
+            )
+            logger.info("repository.update_image.success", extra={"image_id": image_id})
+        except Exception as exc:
+            logger.exception("repository.update_image.failure", extra={"image_id": image_id, "error": str(exc)})
+            raise DatabaseException("Unable to update image metadata.") from exc
+
+    @staticmethod
     def get_image(image_id: str):
         logger.info("repository.get_image.start", extra={"image_id": image_id})
         try:
@@ -82,3 +101,21 @@ class ImageRepository:
         logger.info("repository.list_images.success", extra={"filters": filters, "count": len(items)})
 
         return items
+
+    # @staticmethod
+    # def update_image(image_id: str, updates: dict):
+    #     logger.info("repository.update_image.start", extra={"image_id": image_id, "updates": updates})
+    #     try:
+    #         image_table = get_image_table()
+    #         update_expression = "SET " + ", ".join(f"{k}=:{k}" for k in updates.keys())
+    #         expression_attribute_values = {f":{k}": v for k, v in updates.items()}
+
+    #         image_table.update_item(
+    #             Key={"image_id": image_id},
+    #             UpdateExpression=update_expression,
+    #             ExpressionAttributeValues=expression_attribute_values
+    #         )
+    #         logger.info("repository.update_image.success", extra={"image_id": image_id})
+    #     except Exception as exc:
+    #         logger.exception("repository.update_image.failure", extra={"image_id": image_id, "error": str(exc)})
+    #         raise DatabaseException("Unable to update image metadata.") from exc

@@ -50,6 +50,7 @@ class ImageService:
             "tags": metadata.get("tags", []),
             "content_type": file.content_type,
             "s3_key": s3_key,
+            "status": "UPLOADED",
             "created_at": Helpers().timestamp_to_iso8601(time.time())
         }
 
@@ -74,6 +75,61 @@ class ImageService:
         }
         logger.info("image_service.upload_image.success", extra={"image_id": image_id, "user_id": metadata.get("user_id")})
         return response
+
+    @Helpers().timer_method
+    @staticmethod
+    def generate_upload_url(
+        user_id: str = "",
+        title: str = "",
+        description: str | None = None,
+        tags: list[str] | None = None,
+        content_type: str = "image/png"
+    ):
+        tags = tags or []
+
+        if content_type and not content_type.startswith("image/"):
+            raise InvalidImageFormatException("Upload content type must be a valid image MIME type.")
+
+        logger.info(
+            "image_service.generate_upload_url.start",
+            extra={
+                "user_id": user_id,
+                "title": title,
+                "tags": tags,
+                "content_type": content_type,
+            },
+        )
+
+        try:
+            image_id, s3_key, upload_url = StorageService.generate_presigned_upload_url(content_type=content_type)
+        except StorageServiceException as exc:
+            logger.error("image_service.generate_upload_url.storage_failure", extra={"message": str(exc)})
+            raise ImageUploadException(str(exc)) from exc
+
+        payload = {
+            "image_id": image_id,
+            "user_id": user_id,
+            "title": title,
+            "description": description,
+            "tags": tags,
+            "content_type": content_type,
+            "s3_key": s3_key,
+            "status": "PENDING",
+            "created_at": Helpers().timestamp_to_iso8601(time.time())
+        }
+
+        try:
+            ImageRepository.create_image(payload)
+        except DatabaseException as exc:
+            logger.error("image_service.generate_upload_url.db_failure", extra={"image_id": image_id, "message": str(exc)})
+            raise ImageUploadException("Failed to create pending upload metadata.") from exc
+
+        logger.info("image_service.generate_upload_url.success", extra={"image_id": image_id})
+        return {
+            "image_id": image_id,
+            "key": s3_key,
+            "upload_url": upload_url
+        }
 
     @Helpers().timer_method
     @staticmethod

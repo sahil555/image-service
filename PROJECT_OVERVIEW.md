@@ -1056,6 +1056,42 @@ DYNAMODB_TABLE_NAME=image-service-table
 LOG_LEVEL=INFO
 ```
 
----
+## enchanement for client app url update
+1. S3-presigned upload validation + metadata workflow
+Updated GET /images/get_upload_url in images.py
 
-**Good luck with your interview! Focus on explaining the "why" behind each design decision.**
+accepts optional user_id, title, description, tags, and content_type
+returns image_id, key, and presigned upload URL
+Extended StorageService.generate_presigned_upload_url() in storage_service.py
+supports optional ContentType validation on the upload URL
+Added ImageService.generate_upload_url() in image_service.py
+creates a pending metadata record in DynamoDB with status PENDING
+Added ImageRepository.update_image() in image_repository.py
+supports later metadata/status updates
+
+2. S3-triggered metadata update
+Added s3_event_handler.py
+handles s3:ObjectCreated:* events
+updates existing pending metadata to UPLOADED
+creates a fallback metadata record if none exists
+
+3. Observability via OpenTelemetry
+Added telemetry.py
+initializes OpenTelemetry instrumentation for FastAPI and botocore
+exports via OTLP when OTEL_EXPORTER_OTLP_ENDPOINT is configured
+falls back safely if telemetry dependencies are unavailable
+Initialized telemetry in main.py
+4. Deployment updates
+
+Updated serverless.yml
+added s3UploadHandler for S3 ObjectCreated events
+added OTEL_EXPORTER_OTLP_ENDPOINT and SERVICE_NAME env vars
+added dynamodb:UpdateItem IAM permission
+
+5. Tests added
+Extended test_api.py
+validated pending metadata creation from /images/get_upload_url
+verified app/s3_event_handler.handler() updates metadata status to UPLOADED
+
+6. Dependency updates
+Added OpenTelemetry packages in requirements.txt

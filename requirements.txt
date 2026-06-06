@@ -11,3 +11,9 @@ pytest-asyncio==0.24.0
 moto==5.0.14
 pillow==12.2.0
 python-json-logger==2.0.7
+opentelemetry-api==1.18.0
+opentelemetry-sdk==1.18.0
+opentelemetry-exporter-otlp==1.18.0
+opentelemetry-instrumentation-fastapi==0.39b0
+opentelemetry-instrumentation-logging==0.39b0
+opentelemetry-instrumentation-botocore==0.39b0

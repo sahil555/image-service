@@ -68,19 +68,23 @@ class StorageService:
 
     @Helpers().timer_method
     @staticmethod
-    def generate_presigned_upload_url():
+    def generate_presigned_upload_url(content_type: str = "image/png"):
         """Generate a presigned PUT URL and return (image_id, key, upload_url)."""
         image_id = str(uuid4())
         key = f"images/{image_id}"
-        logger.info("storage.generate_presigned_upload_url.start", extra={"image_id": image_id, "s3_key": key})
+        params = {
+            'Bucket': settings.S3_BUCKET_NAME,
+            'Key': key,
+        }
+        if content_type:
+            params['ContentType'] = content_type
+
+        logger.info("storage.generate_presigned_upload_url.start", extra={"image_id": image_id, "s3_key": key, "content_type": content_type})
         try:
             s3_client = get_s3_client()
             upload_url = s3_client.generate_presigned_url(
                 ClientMethod='put_object',
-                Params={
-                    'Bucket': settings.S3_BUCKET_NAME,
-                    'Key': key,
-                },
+                Params=params,
                 ExpiresIn=3600,
             )
             logger.info("storage.generate_presigned_upload_url.success", extra={"image_id": image_id, "s3_key": key})

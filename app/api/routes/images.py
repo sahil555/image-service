@@ -2,7 +2,6 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.core.logging import logger
 from app.services.image_service import ImageService
-from app.services.storage_service import StorageService
 from app.core.exception import (
     DatabaseException,
     ImageDeletionException,
@@ -17,14 +16,30 @@ router = APIRouter(prefix="/images", tags=["images"])
 
 
 @router.get("/get_upload_url")
-def get_upload_url(user_id: str = ""):
-    logger.info("get_upload_url.request", extra={"user_id": user_id})
+def get_upload_url(
+    user_id: str = "",
+    title: str = "",
+    description: str = "",
+    tags: str = "",
+    content_type: str = "image/png"
+):
+    metadata = {
+        "user_id": user_id,
+        "title": title,
+        "description": description or None,
+        "tags": tags.split(",") if tags else [],
+        "content_type": content_type,
+    }
+
+    logger.info("get_upload_url.request", extra=metadata)
     try:
-        image_id, key, upload_url = StorageService.generate_presigned_upload_url()
-        response = {"image_id": image_id, "key": key, "upload_url": upload_url}
-        logger.info("get_upload_url.success", extra={"image_id": image_id, "key": key})
+        response = ImageService.generate_upload_url(**metadata)
+        logger.info("get_upload_url.success", extra={"image_id": response["image_id"], "key": response["key"]})
         return response
-    except StorageServiceException as exc:
+    except (InvalidImageFormatException, ValidationException) as exc:
+        logger.warning("get_upload_url.validation_failure", extra={"error": str(exc)})
+        raise HTTPException(status_code=400, detail=str(exc))
+    except (ImageUploadException, StorageServiceException, DatabaseException) as exc:
         logger.error("get_upload_url.failure", extra={"error": str(exc)})
         raise HTTPException(status_code=500, detail=str(exc))
     except Exception as exc:

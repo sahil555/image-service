@@ -11,7 +11,8 @@ from app.core.exception import (
     StorageServiceException,
     ValidationException,
 )
-from app.core.logging import logger, set_request_id, clear_request_id, LoggingMiddleware
+from app.core.logging import logger, LoggingMiddleware
+from app.core.telemetry import init_telemetry
 
 
 
@@ -25,6 +26,7 @@ app = FastAPI(
 )
 
 app.add_middleware(LoggingMiddleware)
+init_telemetry(app)
 
 app.include_router(image_router)
 
@@ -50,22 +52,22 @@ async def validation_exception_handler(request: Request, exc: ValidationExceptio
 @app.exception_handler(ImageUploadException)
 async def image_upload_exception_handler(request: Request, exc: ImageUploadException):
     logger.error("image_upload_exception", extra={"path": str(request.url.path), "error": str(exc)})
-    return create_error_response(500, str(exc))
+    return create_error_response(500, "An error occurred while uploading the image. Please try again later.")
 
 
 @app.exception_handler(ImageDeletionException)
 async def image_deletion_exception_handler(request: Request, exc: ImageDeletionException):
     logger.error("image_deletion_exception", extra={"path": str(request.url.path), "error": str(exc)})
-    return create_error_response(500, str(exc))
+    return create_error_response(500, "An error occurred while deleting the image. Please try again later.")
 
 
 @app.exception_handler(StorageServiceException)
 async def storage_service_exception_handler(request: Request, exc: StorageServiceException):
     logger.error("storage_service_exception", extra={"path": str(request.url.path), "error": str(exc)})
-    return create_error_response(500, str(exc))
+    return create_error_response(500, "An error occurred while accessing the storage service. Please try again later.")
 
 
 @app.exception_handler(DatabaseException)
 async def database_exception_handler(request: Request, exc: DatabaseException):
     logger.error("database_exception", extra={"path": str(request.url.path), "message": str(exc)})
-    return create_error_response(500, str(exc))
+    return create_error_response(500, "An error occurred while accessing the database. Please try again later.")
