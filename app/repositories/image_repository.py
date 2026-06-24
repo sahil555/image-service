@@ -25,6 +25,12 @@ class ImageRepository:
             update_expression = "SET " + ", ".join(f"#{k} = :{k}" for k in updates.keys())
             expression_attribute_names = {f"#{k}": k for k in updates.keys()}
             expression_attribute_values = {f":{k}": v for k, v in updates.items()}
+            logger.debug("repository.update_image.update_expression", 
+                         extra={"image_id": image_id, 
+                                "update_expression": update_expression, 
+                                "expression_attribute_names": expression_attribute_names, 
+                                "expression_attribute_values": expression_attribute_values
+                                })
             image_table.update_item(
                 Key={"image_id": image_id},
                 UpdateExpression=update_expression,
