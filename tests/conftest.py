@@ -49,6 +49,35 @@ def aws_resources(aws_credentials):
         )
         yield
 
+
+@pytest.fixture
+def localstack_resources(aws_credentials):
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL", "http://localhost:4566")
+    settings.USE_LOCALSTACK = True
+    settings.AWS_ENDPOINT_URL = endpoint_url
+
+    s3 = boto3.client("s3", region_name=settings.AWS_REGION, endpoint_url=endpoint_url)
+    if settings.AWS_REGION == "us-east-1":
+        s3.create_bucket(Bucket=settings.S3_BUCKET_NAME)
+    else:
+        s3.create_bucket(
+            Bucket=settings.S3_BUCKET_NAME,
+            CreateBucketConfiguration={"LocationConstraint": settings.AWS_REGION}
+        )
+
+    dynamodb = boto3.resource("dynamodb", region_name=settings.AWS_REGION, endpoint_url=endpoint_url)
+    dynamodb.create_table(
+        TableName=settings.DYNAMODB_TABLE_NAME,
+        KeySchema=[{"AttributeName": "image_id", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "image_id", "AttributeType": "S"}],
+        BillingMode="PAY_PER_REQUEST"
+    )
+
+    yield
+
+    settings.USE_LOCALSTACK = False
+    settings.AWS_ENDPOINT_URL = None
+
 @pytest.fixture
 def sample_image_path(tmp_path):
     """Creates a sample image file for testing."""

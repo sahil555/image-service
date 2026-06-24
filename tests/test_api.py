@@ -1,5 +1,8 @@
+import boto3
+from botocore.exceptions import ClientError
 import pytest
 from httpx import AsyncClient
+from app.core.config import settings
 from app.main import app
 from app.repositories.image_repository import ImageRepository
 
@@ -235,6 +238,70 @@ async def test_get_upload_url_creates_pending_metadata(aws_resources):
         assert item["tags"] == ["pending", "upload"]
         assert item["content_type"] == "image/png"
         assert item["s3_key"] == payload["key"]
+
+
+@pytest.mark.asyncio
+async def test_upload_image_rejects_invalid_file_type(aws_resources):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        files = {
+            "file": ("sample.txt", b"not-an-image", "text/plain")
+        }
+        data = {
+            "user_id": "user1",
+            "title": "Bad File",
+            "description": "This is not an image",
+            "tags": "invalid"
+        }
+
+        response = await client.post("/images", files=files, data=data)
+
+        assert response.status_code == 400
+        assert "Uploaded file must be an image" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_list_images_filters_non_matching_results(aws_resources, sample_image):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        files = {"file": ("sample.png", sample_image, "image/png")}
+        data = {
+            "user_id": "user1",
+            "title": "Travel Image",
+            "description": "Travel photo",
+            "tags": "travel"
+        }
+
+        upload_response = await client.post("/images", files=files, data=data)
+        assert upload_response.status_code == 200
+
+        filtered_response = await client.get("/images", params={"user_id": "user2", "tag": "food"})
+        assert filtered_response.status_code == 200
+        assert filtered_response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_delete_image_removes_s3_object(aws_resources, sample_image):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        files = {"file": ("sample.png", sample_image, "image/png")}
+        data = {
+            "user_id": "user1",
+            "title": "Delete Test",
+            "description": "This image will be deleted",
+            "tags": "archive"
+        }
+
+        upload_response = await client.post("/images", files=files, data=data)
+        assert upload_response.status_code == 200
+        image_id = upload_response.json()["image_id"]
+        s3_key = ImageRepository.get_image(image_id)["s3_key"]
+
+        delete_response = await client.delete(f"/images/{image_id}")
+        assert delete_response.status_code == 200
+
+        s3 = boto3.client("s3", region_name=settings.AWS_REGION)
+        with pytest.raises(ClientError) as exc:
+            s3.head_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+
+        assert exc.value.response["Error"]["Code"] in {"404", "NoSuchKey"}
 
 
 def test_s3_event_handler_updates_pending_upload(aws_resources):

@@ -36,6 +36,7 @@ APIs serve metadata + secure download URLs
 Service scales horizontally using Lambda/ECS
 
 # API 
+GET /get_upload_url
 POST /images
 GET /images?user_id=u1&tag=travel
 GET /images/{image_id}
@@ -43,7 +44,31 @@ DELETE /images/{image_id}
 
 # Step by Step process execution of APIs
 
-1. POST /images
+1. GET /get_upload_url
+
+User Requests for URL
+        │
+        ▼
+FastAPI route receives requests with user details
+        │
+        ▼
+ImageService.generate_upload_url()
+        │
+        ├── StorageService generate_presigned_upload_url
+        │
+        ├── Generates unique image_id, key, upload_url
+        │
+        ├── Metadata prepared
+        │
+        ▼
+ImageRepository saves metadata in DynamoDB
+        │
+        │
+        ▼
+Response returned
+
+
+2. POST /images
 
 User uploads image
         │
@@ -68,7 +93,7 @@ Presigned URL generated
         ▼
 Response returned
 
-2. GET /images?user_id=u1&tag=travel
+3. GET /images?user_id=u1&tag=travel
 
 FastAPI Route
       │
@@ -84,7 +109,7 @@ DynamoDB query/scan
       ▼
 Filtered response
 
-3. 
+4. GET /images/{image_id}
 
 Fetch metadata from DynamoDB
         │
@@ -163,6 +188,28 @@ python -m pip install -r requirements.txt
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+## Running with LocalStack
+
+This project supports LocalStack by pointing S3 and DynamoDB clients at a local AWS-compatible endpoint.
+
+- Start LocalStack and the image service with Docker Compose:
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+- The image service is configured to use LocalStack when `USE_LOCALSTACK` is enabled and `AWS_ENDPOINT_URL` is set.
+
+- In this setup, LocalStack provides S3 and DynamoDB emulation on `http://localhost:4566`.
+
+- A dedicated pytest fixture named `localstack_resources` is available to run tests against the LocalStack endpoint instead of `moto`.
+
+- Run tests locally:
+
+```bash
+pytest -q
 ```
 
 ## Tests

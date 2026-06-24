@@ -1,16 +1,38 @@
 
 services:
-    image-service:
-        build:
-            context: .
-            dockerfile: deployment/docker/Dockerfile
-        ports:
-        - "8000:8000"
-        environment:
-            - AWS_REGION=ap-south-1
-            - S3_BUCKET_NAME=image-service-bucket-ap-south-1
-            - DYNAMODB_TABLE_NAME=image-service-table-ap-south-1
-            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  localstack:
+    image: localstack/localstack:2.3.0
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - SERVICES=s3,dynamodb
+      - DEFAULT_REGION=ap-south-1
+      - DATA_DIR=/tmp/localstack/data
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  image-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - AWS_REGION=ap-south-1
+      - AWS_DEFAULT_REGION=ap-south-1
+      - S3_BUCKET_NAME=image-service-bucket-ap-south-1
+      - DYNAMODB_TABLE_NAME=image-service-table-ap-south-1
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - USE_LOCALSTACK=true
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-http://localstack:4566}
+    depends_on:
+      - localstack
 
 

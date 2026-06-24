@@ -8,10 +8,14 @@ from app.utils.helpers import Helpers
 
 
 def get_s3_client():
-    return boto3.client(
-        "s3",
-        region_name=settings.AWS_REGION
-    )
+    client_kwargs = {"region_name": settings.AWS_REGION}
+
+    if settings.USE_LOCALSTACK:
+        client_kwargs["endpoint_url"] = settings.AWS_ENDPOINT_URL or "http://localstack:4566"
+    elif settings.AWS_ENDPOINT_URL:
+        client_kwargs["endpoint_url"] = settings.AWS_ENDPOINT_URL
+
+    return boto3.client("s3", **client_kwargs)
 
 
 class StorageService:

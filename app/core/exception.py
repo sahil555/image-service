@@ -26,7 +26,7 @@ class ImageDeletionException(Exception):
     """Raised when there is an error during image deletion."""
 
     def __init__(self, message: str):
-        logger.error("Error occurred while deleting image.", extra={"message": message})
+        logger.error("Error occurred while deleting image.", extra={"error": message})
         super().__init__(message)
 
 
@@ -34,7 +34,7 @@ class InvalidImageFormatException(Exception):
     """Raised when the uploaded file is not a valid image format."""
 
     def __init__(self, message: str):
-        logger.error("Invalid image format.", extra={"message": message})
+        logger.error("Invalid image format.", extra={"error": message})
         super().__init__(message)
 
 
@@ -42,14 +42,14 @@ class StorageServiceException(Exception):
     """Raised when there is an error with the storage service."""
 
     def __init__(self, message: str):
-        logger.error("Error occurred with the storage service.", extra={"message": message})
+        logger.error("Error occurred with the storage service.", extra={"error": message})
         super().__init__(message)
 
 
 class DatabaseException(Exception):
     """Raised when there is an error with the database operations."""
     def __init__(self, message: str):
-        logger.error("Error occurred with the database.", extra={"message": message})
+        logger.error("Error occurred with the database.", extra={"error": message})
         super().__init__(message)
 
 class ValidationException(Exception):

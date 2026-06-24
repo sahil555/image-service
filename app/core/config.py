@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     DYNAMODB_TABLE_NAME: str = "image-service-table-ap-south-1"
     AWS_ACCESS_KEY_ID: str = "${AWS_ACCESS_KEY_ID}"
     AWS_SECRET_ACCESS_KEY: str = "${AWS_SECRET_ACCESS_KEY}"
-
+    USE_LOCALSTACK: bool = False
+    AWS_ENDPOINT_URL: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
